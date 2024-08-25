@@ -1,7 +1,7 @@
 #include "raylib.h"
 #include "schrift.h"
-#include "stdio.h"
-
+#include <stdio.h>
+#include <stdlib.h>
 int isPrintable(int c)
 {
     switch (c)
@@ -107,10 +107,71 @@ int isPrintable(int c)
         return 0;
     }
 }
+
+char *line;
+int li = 0;
+
+SFT sft;
+SFT_Image* glyphs[130];
+
+SFT_Image* add_glyph(int cp)
+{
+
+	SFT_Glyph gid;  //  unsigned long gid;
+	if (sft_lookup(sft, cp, &gid) < 0)
+		{
+            printf("Missing char %c",cp);
+            return 0;
+        }
+
+	SFT_GMetrics mtx;
+	if (sft_gmetrics(sft, gid, &mtx) < 0){
+       printf("bad glyph metrics %c",cp) ;
+       return 0;
+    }
+		 
+    SFT_Image* img =(SFT_Image*) malloc(sizeof(STF_Image));
+    img->width  = (mtx.minWidth + 3) & ~3;
+    img->height =  mtx.minHeight;
+
+
+	im ->pixels = malloc(img.width * img.height);
+	if (sft_render(sft, gid, img) < 0){
+       printf("render issue    %c",cp) ;
+       return 0;
+    }
+		
+
+
+	return img;
+}
+
+int initFont()
+{
+    int s = 2;
+    sft.xScale = 16 * s;
+    sft.yScale = 16 * s;
+    sft.flags = SFT_DOWNWARD_Y;
+    sft.font = sft_loadfile("C:\\Users\\Vivek\\Developer\\lce\\src\\resources\\font.ttf");
+    if (sft.font == NULL){
+        return -1;
+    }
+    for(int i=0;i<130;i++){
+        if(isPrintable(i)!=0){
+            glyphs[i]= add_glyph(i);
+        }else{
+            glyphs[i]= 0;
+        }
+    }
+}
 int main(void)
 {
     const int screenWidth = 800;
     const int screenHeight = 450;
+    line = malloc(1024);
+    if(initFont()==-1){
+        return -1;
+    }
 
     InitWindow(screenWidth, screenHeight, "raylib [core] example - basic window");
 
@@ -120,8 +181,12 @@ int main(void)
         int keyCode = GetCharPressed();
         while (keyCode != 0)
         {
-            if(isPrintable(keyCode))
-                printf("%c %d\n", keyCode, keyCode);
+            if (isPrintable(keyCode) != 0)
+            {
+                line[li++] = keyCode;
+                printf("%s\n", line);
+            }
+
             keyCode = GetCharPressed();
         }
         BeginDrawing();
